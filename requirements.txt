@@ -1,0 +1,4 @@
+h2o==3.16.0.4
+numpy==1.14.0
+protobuf==3.5.1
+scikit_learn==0.19.1
