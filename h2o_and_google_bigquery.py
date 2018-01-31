@@ -53,6 +53,18 @@ class GoogleH2OIntegration(object):
         df = query_job.to_dataframe()
         return df
 
+    def write_to_table(self, test_ids, predictions):
+        """
+        Takes test_ids and predictions and adds them to new predictions table
+        INPUT: test_ids (LIST of INTEGERS) - foreign keys for SQL JOIN
+               predictions (LIST of STRINGS) - current schema set by default
+                                               for strings, can be changed.
+                                               All predictions from test set
+        """
+        to_table = zip(test_ids, predictions)
+        self.client.insert_rows(self.pred_table, to_table)
+        print "Success"
+
     def _multiline(self):
         print "Enter/Paste your content. Ctrl-D to save it."
         contents = []
@@ -115,3 +127,8 @@ if __name__ == "__main__":
     # Call bigquery client to add contents of add_to_table to previously
     # created predictions_table
     g_h2o.client.insert_rows(g_h2o.pred_table, add_to_table)
+
+    # NOTE: Below is the new method for performing the above 2 lines of code
+    #       NOT TESTED, therefore commented out
+    # test_ids = xrange(predictions.shape[0])
+    # g_h2o.write_to_table(test_ids, predictions['predict'])
