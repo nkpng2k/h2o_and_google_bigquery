@@ -20,25 +20,12 @@ y = np.zeros((df.shape[0], 1))
 X_train, X_test, y_train, y_test = train_test_split(df, y, test_size=0.2)
 df = df.drop(['Id','Species'], axis=1)
 
-# Initialize H2O and ingest data returned by bigquery query
-h2o.init(nthreads=-1, max_mem_size='2g', ip="127.0.0.1", port=54321)
-train_col = list(X_train.columns)
-test_col = list(X_test.columns)
-train = h2o.H2OFrame.from_python(X_train, column_names=train_col)
-test = h2o.H2OFrame.from_python(X_test, column_names=test_col)
-
-# Create lists of column names to be passed to H2O AutoML
-x = train.columns
-y = 'Species'
-ids = 'Id'
-x.remove(y)
-x.remove(ids)
-
-# Create instance of H2O AutoML and search for best model.
-aml = H2OAutoML(max_runtime_secs=30)
-aml.train(x=x, y=y, training_frame=train, leaderboard_frame=test)
-lb = aml.leaderboard
-print lb
+# Define arguements for H2O and automl
+# call h2o_automl() method to run AutoML on provided data
+h2o_args = {"nthreads":-1, "max_mem_size":'2g', "ip":"127.0.0.1", "port":54321}
+aml_args = {"max_runtime_secs":30}
+aml = g_h2o.h2o_automl(X_train, X_test, 'Species', ['Species', 'Id'],
+                       h2o_args, aml_args)
 
 # Ingest data for prediction. Note that in this case I just used the same
 # data, In reality this would be new data.
