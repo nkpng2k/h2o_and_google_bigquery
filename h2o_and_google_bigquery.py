@@ -66,7 +66,7 @@ class GoogleH2OIntegration(object):
         """
         to_table = zip(test_ids, predictions)
         self.client.insert_rows(self.pred_table, to_table)
-        print "Success"
+        print ("Success")
 
     def h2o_automl(self, X_train, X_test, target, remove_cols, h2o_args, aml_args):
         """
@@ -101,18 +101,19 @@ class GoogleH2OIntegration(object):
         return aml
 
     def _multiline(self):
-        print "Enter/Paste your content. Ctrl-D to save it."
+        print ("Enter/Paste your content. 'end_query' to save it.")
         contents = []
-        while True:
-            try:
-                line = raw_input("")
-            except EOFError:
-                break
+        continue_query = True
+        while continue_query:
+            line = input("")
+            if line == 'end query':
+                continue_query = False
+                continue
             contents.append(line)
         return " ".join(contents)
 
     def _set_schema(self, col_name, col_type, mode):
-        for i in xrange(len(col_name)):
+        for i in range(len(col_name)):
             one_col = bigquery.SchemaField(col_name[i],
                                            col_type[i],
                                            mode=mode[i])
@@ -152,7 +153,7 @@ if __name__ == "__main__":
     aml = H2OAutoML(max_runtime_secs=30)
     aml.train(x=x, y=y, training_frame=train, leaderboard_frame=test)
     lb = aml.leaderboard
-    print lb
+    print (lb)
 
     # Ingest data for prediction. Note that in this case I just used the same
     # data, In reality this would be new data.
@@ -164,5 +165,5 @@ if __name__ == "__main__":
     # [(test_id, prediction)] * n_rows
     # Call bigquery client to add contents of add_to_table to previously
     # created predictions_table
-    test_ids = xrange(predictions.shape[0])
+    test_ids = range(predictions.shape[0])
     g_h2o.write_to_table(test_ids, predictions['predict'])
