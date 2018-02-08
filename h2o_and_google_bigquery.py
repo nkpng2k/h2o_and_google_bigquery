@@ -106,7 +106,7 @@ class GoogleH2OIntegration(object):
         continue_query = True
         while continue_query:
             line = input("")
-            if line == 'end query':
+            if line == 'end_query':
                 continue_query = False
                 continue
             contents.append(line)
