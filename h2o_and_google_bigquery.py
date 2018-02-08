@@ -68,6 +68,26 @@ class GoogleH2OIntegration(object):
         self.client.insert_rows(self.pred_table, to_table)
         print "Success"
 
+    def h2o_automl(self, X_train, X_test, target, remove_cols, h2o_args, aml_args):
+        h2o.init(**h2o_args)
+
+        train_col = list(X_train.columns)
+        test_col = list(X_test.columns)
+
+        train = h2o.H2OFrame.from_python(X_train, column_names=train_col)
+        test = h2o.H2OFrame.from_python(X_test, column_names=test_col)
+
+        x = train.columns
+        for col in remove_cols:
+            x.remove(col)
+
+        aml = H2OAutoML(aml_args)
+        aml.train(x=x, y=target, training_frame=train, leaderboard_frame=test)
+        lb = aml.leaderboard
+        print (lb)
+
+        return aml
+
     def _multiline(self):
         print "Enter/Paste your content. Ctrl-D to save it."
         contents = []
