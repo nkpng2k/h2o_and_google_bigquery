@@ -7,7 +7,7 @@ import h2o
 
 class GoogleH2OIntegration(object):
 
-    def __init__(self, dataset, pred_table_name):
+    def __init__(self, dataset, pred_table_name, bq_auth=None):
         """
         INPUT: dataset (STRING) - name of dataset from Google bigquery
                pred_table_name (STRING) - name for new table in bigquery
@@ -23,8 +23,10 @@ class GoogleH2OIntegration(object):
                     self.pred_table_ref - table reference for bigquery API
                     self.pred_table - instance of new bigquery table
         """
-
-        self.client = bigquery.Client()
+        if bq_auth==None:
+            self.client = bigquery.Client()
+        else:
+            self.client = bigquery.Client.from_service_accoutn_json(bq_auth)
         self.dataset = self.client.dataset(dataset)
         self.col_name = ['test_id', 'prediction']
         self.col_type = ['INTEGER', 'STRING']
