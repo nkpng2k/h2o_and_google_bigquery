@@ -69,6 +69,18 @@ class GoogleH2OIntegration(object):
         print "Success"
 
     def h2o_automl(self, X_train, X_test, target, remove_cols, h2o_args, aml_args):
+        """
+        Initializes an instance of H2O and runs H2O AutoML to identify and return top model
+        INPUT: X_train (DATAFRAME) - training data with target column
+               X_test (DATAFRAME) - validation data with or without target column
+               target (STRING) - name of target column
+               remove_cols (LIST of STRINGS) - list of all columns to be ignored in training
+               h2o_args (DICT of kwargs) - dictionary containing all desired arguments for
+                                           initializing H2O
+               aml_args (DICT of kwargs) - dictionary containing all desired arguments for
+                                           initializing H2O AutoML
+        OUTPUT: aml - trained AutoML object containing best model (aml.leader)
+        """
         h2o.init(**h2o_args)
 
         train_col = list(X_train.columns)
@@ -81,7 +93,7 @@ class GoogleH2OIntegration(object):
         for col in remove_cols:
             x.remove(col)
 
-        aml = H2OAutoML(aml_args)
+        aml = H2OAutoML(**aml_args)
         aml.train(x=x, y=target, training_frame=train, leaderboard_frame=test)
         lb = aml.leaderboard
         print (lb)
