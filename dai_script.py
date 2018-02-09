@@ -12,8 +12,10 @@ g_h2o = GoogleH2OIntegration(dataset, pred_table, bq_auth=bq_auth)
 train_df = g_h2o.bigquery_query()
 test_df = g_h2o.bigquery_query()
 
-fp_train_csv = 'Users/npng/Downloads/train.csv'
-fp_test_csv = 'Users/npng/Downloads/test.csv'
+test_csv = 'Users/npng/data/test.csv'
+dai_train_csv = '/data/train.csv'
+dai_test_csv = '/data/test.csv'
+
 
 train_df.to_csv(fp_train_csv)
 test_df.to_csv(fp_test_csv)

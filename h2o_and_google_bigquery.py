@@ -9,6 +9,9 @@ class GoogleH2OIntegration(object):
 
     def __init__(self, dataset, pred_table_name, bq_auth=None):
         """
+        Constructs class object of GoogleH2OIntegration.
+        NOTE: if argument pred_table_name points to an already existing table in
+              BigQuery, that table will be deleted 
         INPUT: dataset (STRING) - name of dataset from Google bigquery
                pred_table_name (STRING) - name for new table in bigquery
         ATTRIBUTES: self.client - Initialized bigquery client using API,
