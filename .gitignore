@@ -1,5 +1,7 @@
-#ignore __pycache__/
+#things to ignore
 
 /__pycache__
 /.ipynb_checkpoints
 *.pyc
+/data
+/.DS_Store
