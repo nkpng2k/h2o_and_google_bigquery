@@ -119,6 +119,7 @@ class GoogleH2OIntegration(object):
     def h2o_dia(self, client_args, model_params, train_df, test_df, fp_local,
                 fp_dai, valid_df=None):
         """
+        THIS WILL BASICALLY ONLY WORK ON A LOCAL MACHINE AT THE MOMMENT
         INPUT: client_args (DICT) - dictionary containing kwargs for launching
                                     h2oai_client.client
                model_params (DICT) - dictionary containing kwargs that will be
