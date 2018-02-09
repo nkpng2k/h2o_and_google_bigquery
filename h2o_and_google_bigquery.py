@@ -1,7 +1,10 @@
 from google.cloud import bigquery
 from h2o.automl import H2OAutoML
 from sklearn.model_selection import train_test_split
+import h2oai_client
+from h2oai_client import Client, ModelParameters
 import numpy as np
+import pandas as pd
 import h2o
 
 
@@ -10,8 +13,8 @@ class GoogleH2OIntegration(object):
     def __init__(self, dataset, pred_table_name, bq_auth=None):
         """
         Constructs class object of GoogleH2OIntegration.
-        NOTE: if argument pred_table_name points to an already existing table in
-              BigQuery, that table will be deleted 
+        NOTE: if argument pred_table_name points to an already existing table
+              in BigQuery, that table will be deleted
         INPUT: dataset (STRING) - name of dataset from Google bigquery
                pred_table_name (STRING) - name for new table in bigquery
         ATTRIBUTES: self.client - Initialized bigquery client using API,
@@ -78,17 +81,20 @@ class GoogleH2OIntegration(object):
         self.client.insert_rows(self.pred_table, to_table)
         print ("Success")
 
-    def h2o_automl(self, X_train, X_test, target, remove_cols, h2o_args, aml_args):
+    def h2o_automl(self, X_train, X_test, target, drop_cols, h2o_args,
+                   aml_args):
         """
-        Initializes an instance of H2O and runs H2O AutoML to identify and return top model
+        Initializes an instance of H2O and runs H2O AutoML to identify and
+        return top model
         INPUT: X_train (DATAFRAME) - training data with target column
-               X_test (DATAFRAME) - validation data with or without target column
+               X_test (DATAFRAME) - validation data (can have target column)
                target (STRING) - name of target column
-               remove_cols (LIST of STRINGS) - list of all columns to be ignored in training
-               h2o_args (DICT of kwargs) - dictionary containing all desired arguments for
-                                           initializing H2O
-               aml_args (DICT of kwargs) - dictionary containing all desired arguments for
-                                           initializing H2O AutoML
+               drop_cols (LIST of STRINGS) - list of all columns to be ignored
+                                             in training
+               h2o_args (DICT of kwargs) - dictionary containing all desired
+                                           arguments for initializing H2O
+               aml_args (DICT of kwargs) - dictionary containing all desired
+                                           arguments for initializing AutoML
         OUTPUT: aml - trained AutoML object containing best model (aml.leader)
         """
         h2o.init(**h2o_args)
@@ -110,6 +116,54 @@ class GoogleH2OIntegration(object):
 
         return aml
 
+    def h2o_dia(self, client_args, model_params, train_df, test_df, fp_local,
+                fp_dai, valid_df=None):
+        """
+        INPUT: client_args (DICT) - dictionary containing kwargs for launching
+                                    h2oai_client.client
+               model_params (DICT) - dictionary containing kwargs that will be
+                                     passed to h2oai_client.ModelParameters
+               train_df (DATAFRAME) - training dataframe resulting from
+                                      bigquery_query()
+               test_df (DATAFRAME) - test dataframe resulting from
+                                     bigquery_query()
+               fp_local (LIST of STRINGS) - strings are filepaths to local
+                                            directory where H2O DAI will look.
+                                            ex: [train_fp, test_fp]
+               fp_dai (LIST of STRINGS) - strings are filepaths formatted to
+                                          where H2O DAI checks for data on
+                                          server
+                                          ex: [train_fp, test_fp]
+               valid_df (OPTIONAL DATAFRAME) - dataframe for validation
+                                               dataset. NOTE: if NOT None, both
+                                               fp_local and fp_dai will need
+                                               to be length of 3 instead of 2
+                                               ex: [train_fp, test_fp, valid_fp]
+        OUTPUT: test_preds (DATAFRAME) - pandas dataframe containing
+                                         predictions made on test dataset
+        """
+        train_df.to_csv(fp_local[0])
+        test_df.to_csv(fp_local[1])
+
+        h2o_ai = Client(**client_args)
+
+        train = h2o_ai.create_dataset_sync(fp_dai[0])
+        test = h2o_ai.create_dataset_sync(fp_dai[1])
+        if valid_df != None:
+            valid_df.to_csv(fp_dai[2])
+            valid = h2o_ai.create_dataset_sync(fp_dai[2])
+            valid_key = valid.key
+        else:
+            valid_key = ''
+
+        params = ModelParameters(dataset_key=train.key, testset_key=test.key,
+                                 validset_key=valid_key, **model_params)
+        exp = h2o_ai.start_experiment_sync(params)
+        h2o_ai.download(src_path=exp.test_predictions_path, dest_dir='.')
+        test_preds = pd.read_csv('./test_preds.csv')
+        return exp, test_preds
+
+
     def _multiline(self):
         print ("Enter/Paste your content. 'end_query' to save it.")
         contents = []
@@ -128,9 +182,6 @@ class GoogleH2OIntegration(object):
                                            col_type[i],
                                            mode=mode[i])
             self.SCHEMA.append(one_col)
-
-    def _does_table_exist(self):
-        pass
 
 
 if __name__ == "__main__":
@@ -180,3 +231,16 @@ if __name__ == "__main__":
     # created predictions_table
     test_ids = range(predictions.shape[0])
     g_h2o.write_to_table(test_ids, predictions['predict'])
+
+
+    # TOY PARAMETERS
+    # dataset = 'titanic_dataset'
+    # client_args = {'address':'http://127.0.0.1:12345', 'username':'npng', 'password': 'npng'}
+    # model_params = {'target_col':"Survived", 'cols_to_drop': ['PassengerId'],
+    #                 'weight_col': None, "fold_col": None, 'time_col':'[AUTO]',
+    #                 'is_classification':True, "enable_gpus":True, "seed": True,
+    #                 'scorer':'auc', 'accuracy': 5, 'time':5, "interpretability":5}
+    # bq_auth = '/Users/npng/Downloads/h2o-project-090347f40536.json'
+    # pred_table = 'pred_table'
+    # fp_local = ['~/data/train.csv', '~/data/test.csv']
+    # fp_dai = ['/data/train.csv', '/data/test.csv']
