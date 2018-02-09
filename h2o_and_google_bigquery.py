@@ -39,7 +39,14 @@ class GoogleH2OIntegration(object):
         self.pred_table_ref = self.dataset.table(pred_table_name)
         self.pred_table = bigquery.Table(self.pred_table_ref,
                                          schema=self.SCHEMA)
-        self.pred_table = self.client.create_table(self.pred_table)
+        try:
+            self.client.get_table(self.pred_table_ref)
+            self.client.delete_table(self.pred_table_ref)
+            self.pred_table = self.client.create_table(self.pred_table)
+            print ('There was an existing table')
+        except:
+            self.pred_table = self.client.create_table(self.pred_table)
+            print ('There was NO existing table')
 
     def bigquery_query(self):
         """
@@ -118,6 +125,9 @@ class GoogleH2OIntegration(object):
                                            col_type[i],
                                            mode=mode[i])
             self.SCHEMA.append(one_col)
+
+    def _does_table_exist(self):
+        pass
 
 
 if __name__ == "__main__":
