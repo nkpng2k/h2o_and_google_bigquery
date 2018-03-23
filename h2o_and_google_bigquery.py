@@ -18,9 +18,8 @@ class GoogleH2OIntegration(object):
               in BigQuery, that table will be deleted
         INPUT: dataset (STRING) - name of dataset from Google bigquery
                pred_table_name (STRING) - name for new table in bigquery
-        ATTRIBUTES: self.bq_client - Initialized bigquery client using API,
-                                  assumes google cloud authentications handled
-                                  already via google cloud sdk
+        ATTRIBUTES: self.bq_client - Initialized bigquery client
+                    self.s_client - Initialized gcs client
                     self.dataset - dataset reference for bigquery API
                     self.col_name/self.col_type/self.mode - lists of strings
                                   necessary for creating 2 column prediction
@@ -126,6 +125,7 @@ class GoogleH2OIntegration(object):
                                            arguments for initializing AutoML
                classification - (BOOL) True will train AutoML as classification
         OUTPUT: aml - trained AutoML object containing best model (aml.leader)
+                preds - predictions based on test dataset
         """
         h2o.init(**h2o_args)
 
